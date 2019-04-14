@@ -1,0 +1,26 @@
+.room {
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    display: inline-block;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 70%;
+}
+
+.room:hover {
+    background-color: #7856AD;
+}
+
+.roomactive {
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    display: inline-block;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 70%;
+    background-color: #7856AD;
+}

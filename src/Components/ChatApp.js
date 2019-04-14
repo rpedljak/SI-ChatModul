@@ -2,24 +2,24 @@ import React, { Component } from 'react';
 import { ChatManager, TokenProvider } from '@pusher/chatkit-client';
 import Input from './Input';
 import MessageList from './MessageList';
-import { instanceLocator, testToken, testRoomId } from './../config.js'
+import { instanceLocator, testToken, testRoomId, apiUrl } from './../config.js'
 import UsersList from './UsersList';
 import RoomList from './RoomList';
-import '../styles/ChatApp.css'
+import '../styles/ChatApp.css';
 
 class ChatApp extends Component {
     constructor(props) {
         super(props);
         this.state = {
             currentUser: null,
-            currentRoom: { users: [] },
+            currentRoom: null,
             messages: [],
             users: [],
             rooms: []
         }
         this.addMessage = this.addMessage.bind(this);
-        this.subscribeToRoom = this.subscribeToRoom.bind(this);
         this.openPrivateChat = this.openPrivateChat.bind(this);
+        this.joinRoomById = this.joinRoomById.bind(this);
     }
 
     componentDidMount() {
@@ -33,49 +33,56 @@ class ChatApp extends Component {
         chatManager.connect()
             .then(currentUser => {
                 this.setState({ currentUser: currentUser })
-                return this.subscribeToRoom(currentUser);
             })
-            .then(currentRoom => {
-                this.setState({
-                    currentRoom,
-                    users: currentRoom.users,
-                    rooms: [...this.state.rooms, currentRoom]
-                })
+            .then(() => {
+                this.setState({ rooms: this.state.currentUser.rooms })
             })
-            .catch((error) => {
-            
+            .then(() => {
+                this.joinRoomById(testRoomId);
             })
     }
 
-    subscribeToRoom(currentUser) {
+    joinRoomById(roomId) {
         this.setState({ messages: [] });
-        return currentUser.subscribeToRoom({
-            roomId: testRoomId,
+        this.state.currentUser.subscribeToRoom({
+            roomId: roomId,
             messageLimit: 100,
             hooks: {
                 onMessage: message => {
                     this.setState({
-                        messages: [...this.state.messages, message],
+                        messages: [...this.state.messages, message]
                     })
                 },
                 onPresenceChanged: () => this.forceUpdate(),
                 onUserJoinedRoom: () => this.forceUpdate(),
                 onUserLeftRoom: () => this.forceUpdate()
             }
+        }).then((room) => {
+            console.log(room);
+            this.setState({
+                currentRoom: room,
+                users: room.users,
+            })
         })
     }
 
     openPrivateChat(userId) {
         this.setState({ messages: [] });
-        this.props.createDirectMessageRoom(userId)
-            .then((room) => {
-                console.log(room);
-                this.setState({ rooms: [...this.state.rooms, room]});
-            });
+        if (this.state.rooms.filter(room => room.name === userId).length > 0) {
+            this.joinRoomById(userId);
+            return;
+        }
+        this.state.currentUser.createRoom({
+            name: userId,
+            private: true,
+            addUserIds: [userId]
+        }).then((room) => {
+            this.setState({ rooms: [...this.state.rooms, room] });
+            this.joinRoomById(room.id);
+        });
     }
 
     addMessage(text) {
-        console.log(this.state);
         this.state.currentUser.sendMessage({
             text,
             roomId: this.state.currentRoom.id
@@ -83,11 +90,10 @@ class ChatApp extends Component {
     }
 
     render() {
-
         return (
             <div className="chat-app-wrapper">
                 <div className="room-wrapper">
-                    <RoomList rooms={this.state.rooms} />
+                    <RoomList room={this.state.currentRoom} joinRoomById={this.joinRoomById} rooms={this.state.rooms} />
                 </div>
                 <div className="msg-wrapper">
                     <h2 className="header">Let's Talk</h2>

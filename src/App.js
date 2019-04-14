@@ -23,14 +23,12 @@ class App extends Component {
     }
     this.changeView = this.changeView.bind(this);
     this.createUser = this.createUser.bind(this);
-    this.createDirectMessageRoom = this.createDirectMessageRoom.bind(this);
   }
   createUser(username) {
     chatkit.createUser({
       id: username,
       name: username,
-    })
-      .then((currentUser) => {
+    }).then((currentUser) => {
         this.setState({
           currentUsername: username,
           currentId: username,
@@ -43,18 +41,8 @@ class App extends Component {
             currentId: username,
             currentView: 'chatApp'
           })
-        } else {
-          console.log(err.status);
         }
       });
-  }
-
-  createDirectMessageRoom(userId) {
-    return chatkit.createRoom({
-      name: userId,
-      private: true,
-      addUserIds: [userId]
-    });
   }
 
   changeView(view) {
@@ -71,7 +59,7 @@ class App extends Component {
     } else if (this.state.currentView === "signup") {
       view = <Signup onSubmit={this.createUser} />
     } else if (this.state.currentView === "chatApp") {
-      view = <ChatApp createDirectMessageRoom={this.createDirectMessageRoom} currentId={this.state.currentId} />
+      view = <ChatApp currentId={this.state.currentId} />
     }
     return (
       <div className="App">
